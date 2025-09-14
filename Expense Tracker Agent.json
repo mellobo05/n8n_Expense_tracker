@@ -1,0 +1,258 @@
+{
+  "name": "Expense Tracker Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.message.text}}",
+        "options": {
+          "systemMessage": "=You are an expense tracker assistant.\n\nFor each user input (provided as plain text), do the following:\n- Parse and extract the transaction details:\n    - Credit_Debit: \"Credit\" if money is incoming, \"Debit\" if money is spent\n    - Type_of_Expenses: Category or description, e.g. \"Salary\", \"Shopping\", etc.\n    - Amount: Extract the integer amount, no currency or commas\n- Recall the previous running total (provided using your memory—if not provided, assume starting total is 0).\n- If Credit_Debit is \"Credit\", add Amount to the previous total.\n- If Credit_Debit is \"Debit\", subtract Amount from the previous total.\n- Return ONLY the following JSON object, nothing else, no explanations, strictly valid JSON:\n{\n  \"Credit_Debit\": \"\",\n  \"Type_of_Expenses\": \"\",\n  \"Amount\": 0,\n  \"Total\": 0\n}\n- After updating \"Total\", if the balance is less than 10000, include this field in the JSON:\n  \"low_balance_alert\": true\n  Otherwise, do not include this field.\n\n**Examples**\nUser input: Salary credited 70000, previous total was 10000\nOutput:\n{\n  \"Credit_Debit\": \"Credit\",\n  \"Type_of_Expenses\": \"Salary\",\n  \"Amount\": 70000,\n  \"Total\": 80000\n}\n\nUser input: Shopping 7400, previous total was 11000\nOutput:\n{\n  \"Credit_Debit\": \"Debit\",\n  \"Type_of_Expenses\": \"Shopping\",\n  \"Amount\": 7400,\n  \"Total\": 3600,\n  \"low_balance_alert\": true\n}\n\n**Rules:**\n- Only respond with the valid JSON object, no code block formatting or extra text.\n- Set \"low_balance_alert\" ONLY if the total is below 10000 after this transaction.\n- If there is no memory of the previous total, use 0 as the starting balance.\n\nMake sure you update these values in google sheet.\nAnd when low balance send email.\n\nUser input to process - {{$json.message.text}}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "5d51d3a0-c4df-4ca6-ad0b-37ba8809a8ca",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        208
+      ],
+      "id": "90d10e6a-72ac-40cb-8700-eb6747de0694",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "l9BiFduMMQYEs04W",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$json.message.chat.id}}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -112,
+        208
+      ],
+      "id": "87a01581-4580-423d-b39a-41449fc51ce8",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "a3c13ef3-d691-43e2-bbbf-45080513afbb",
+      "name": "Telegram Trigger",
+      "webhookId": "ca8ba5a7-95fe-4fe1-824a-0c4adeba768a",
+      "credentials": {
+        "telegramApi": {
+          "id": "aqMxJbBqwZc63qpq",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "19xVOmki7zM4zbDIlKYYtNDCI1nCoMU9K3iig1cNOiNI",
+          "mode": "list",
+          "cachedResultName": "Expense Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19xVOmki7zM4zbDIlKYYtNDCI1nCoMU9K3iig1cNOiNI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19xVOmki7zM4zbDIlKYYtNDCI1nCoMU9K3iig1cNOiNI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Credit/Debit": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Credit_Debit', ``, 'string') }}",
+            "Type of Expenses": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Type_of_Expenses', ``, 'string') }}",
+            "Total": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Total', ``, 'string') }}",
+            "Amount": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Amount', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Credit/Debit",
+              "displayName": "Credit/Debit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Type of Expenses",
+              "displayName": "Type of Expenses",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        208
+      ],
+      "id": "452fbfae-dd5f-42ec-8f62-a6cf30a53f49",
+      "name": "Append row in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FO27AX0f10HVf8Lz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "melanieharriet05@gmail.com",
+        "subject": "Balance Alert!",
+        "message": "Your balance is going low! Please be mindful when spending",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        224
+      ],
+      "id": "884fccfd-d24f-4e11-9d6d-e2592b647527",
+      "name": "Send a message in Gmail",
+      "webhookId": "e544bb8b-cb3c-4aec-96cd-1c40dafa1697",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CrNb6g7Fho0dFrCy",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7c688da6-d771-44ff-a323-9aaa5b8d9bf1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "59a8d01653b1996d09562911ad871fbf5fa5e0fda17cadd67bd1f1e224832d1a"
+  },
+  "id": "SHScRR0EXkMPti2q",
+  "tags": []
+}
